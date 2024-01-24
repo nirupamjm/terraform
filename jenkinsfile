@@ -1,0 +1,64 @@
+pipeline {
+    agent any
+
+    environment {
+        TF_VERSION = "0.15.0"  // Specify your desired Terraform version
+        TF_VAR_aws_access_key = credentials('YOUR_AWS_ACCESS_KEY_ID')  // Jenkins credentials for AWS Access Key ID
+        TF_VAR_aws_secret_key = credentials('YOUR_AWS_SECRET_ACCESS_KEY')  // Jenkins credentials for AWS Secret Access Key
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                git clone https://github.com/nirupamjm/terraform/new/main
+            }
+        }
+
+        stage('Install Terraform') {
+            steps {
+                script {
+                    // Install Terraform
+                    sh """
+                        wget https://releases.hashicorp.com/terraform/${TF_VERSION}/terraform_${TF_VERSION}_linux_amd64.zip
+                        unzip terraform_${TF_VERSION}_linux_amd64.zip
+                        mv terraform /usr/local/bin/
+                    """
+                }
+            }
+        }
+
+        stage('Terraform Init') {
+            steps {
+                script {
+                    // Initialize Terraform
+                    sh 'terraform init'
+                }
+            }
+        }
+
+        stage('Terraform Apply') {
+            steps {
+                script {
+                    // Apply Terraform changes
+                    sh 'terraform apply -auto-approve'
+                }
+            }
+        }
+
+        stage('Terraform Destroy') {
+            steps {
+                script {
+                    // Destroy Terraform resources (optional, depending on your use case)
+                    #sh 'terraform destroy -auto-approve'
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            // Clean up workspace
+            cleanWs()
+        }
+    }
+}
